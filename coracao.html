@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Heart of Love ❤️</title>
+<style>
+  body {
+    background: radial-gradient(circle at center, #fff0f5, #ffe6f2);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    margin: 0;
+    text-align: center;
+  }
+
+  canvas {
+    background: transparent;
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+
+  h1, h2 {
+    font-family: "Arial", sans-serif;
+    color: #ff0040;
+    text-shadow: 0 0 20px #ff6699, 0 0 40px #ff3366;
+    opacity: 0;
+    transition: opacity 3s ease-in-out;
+    z-index: 2;
+    margin: 0;
+  }
+
+  h1 {
+    font-size: clamp(28px, 6vw, 48px);
+    margin-top: 20px;
+  }
+
+  h2 {
+    font-size: clamp(20px, 4.5vw, 36px);
+    margin-top: 10px;
+  }
+
+  #botoes {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    opacity: 0;
+    transition: opacity 2s ease-in-out;
+    margin-top: 20px;
+    z-index: 3;
+    flex-wrap: wrap;
+  }
+
+  button {
+    font-size: clamp(18px, 4vw, 22px);
+    padding: 12px 28px;
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: bold;
+  }
+
+  #sim {
+    background-color: #ff3366;
+    color: white;
+    box-shadow: 0 0 20px #ff3366;
+  }
+
+  #sim:hover {
+    background-color: #ff0040;
+    box-shadow: 0 0 30px #ff0040;
+  }
+
+  #nao {
+    background-color: #ccc;
+    color: #555;
+  }
+
+  #nao:hover {
+    background-color: #aaa;
+  }
+
+  audio {
+    display: none;
+  }
+
+  @media (max-width: 600px) {
+    body {
+      justify-content: flex-start;
+      padding-top: 60px;
+    }
+  }
+</style>
+</head>
+<body>
+<canvas id="canvas" width="800" height="600"></canvas>
+
+<h1 id="texto">Eu te amo ❤️</h1>
+<h2 id="pedido">Joice Luize, aceita namorar comigo? 💍💖</h2>
+
+<div id="botoes">
+  <button id="sim">Sim 💞</button>
+  <button id="nao">Não 😢</button>
+</div>
+
+<audio id="music" autoplay loop>
+  <source src="https://pixabay.com/music/henrique-e-juliano-meu-amor-426955/" type="audio/mpeg">
+</audio>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const texto = document.getElementById('texto');
+const pedido = document.getElementById('pedido');
+const botoes = document.getElementById('botoes');
+const simBtn = document.getElementById('sim');
+const naoBtn = document.getElementById('nao');
+const music = document.getElementById('music');
+
+let heartProgress = 0;
+let showText = false;
+let pulseTime = 0;
+let floatingHearts = [];
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+// ====== DESENHA BONECO NA ESQUERDA ======
+function drawCharacter() {
+  const baseX = canvas.width * 0.2; // posição mais à esquerda
+  const baseY = canvas.height * 0.55;
+  const scale = Math.min(canvas.width, canvas.height) / 600;
+
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 2 * scale;
+
+  ctx.beginPath();
+  ctx.arc(baseX, baseY - 100 * scale, 30 * scale, 0, Math.PI * 2); // cabeça
+  ctx.moveTo(baseX, baseY - 70 * scale);
+  ctx.lineTo(baseX, baseY + 40 * scale); // corpo
+  ctx.moveTo(baseX, baseY + 40 * scale);
+  ctx.lineTo(baseX - 30 * scale, baseY + 100 * scale);
+  ctx.moveTo(baseX, baseY + 40 * scale);
+  ctx.lineTo(baseX + 30 * scale, baseY + 100 * scale);
+  ctx.moveTo(baseX, baseY - 30 * scale);
+  ctx.lineTo(baseX + 50 * scale, baseY - 70 * scale);
+  ctx.moveTo(baseX, baseY - 30 * scale);
+  ctx.lineTo(baseX - 50 * scale, baseY - 70 * scale);
+  ctx.stroke();
+
+  // Olhos e sorriso
+  ctx.beginPath();
+  ctx.arc(baseX - 10 * scale, baseY - 110 * scale, 3 * scale, 0, Math.PI * 2);
+  ctx.arc(baseX + 10 * scale, baseY - 110 * scale, 3 * scale, 0, Math.PI * 2);
+  ctx.moveTo(baseX - 10 * scale, baseY - 100 * scale);
+  ctx.quadraticCurveTo(baseX, baseY - 90 * scale, baseX + 10 * scale, baseY - 100 * scale);
+  ctx.stroke();
+
+  return { baseX, baseY, scale };
+}
+
+// ====== CORAÇÃO ======
+function drawHeart(x, y, scale, progress, glowIntensity) {
+  ctx.beginPath();
+  for (let i = 0; i < progress; i++) {
+    const t = (Math.PI * 2 * i) / 200;
+    const X = 16 * Math.pow(Math.sin(t), 3);
+    const Y = 13 * Math.cos(t) - 5 * Math.cos(2 * t)
+             - 2 * Math.cos(3 * t) - Math.cos(4 * t);
+    if (i === 0) ctx.moveTo(x + X * scale, y - Y * scale);
+    else ctx.lineTo(x + X * scale, y - Y * scale);
+  }
+  ctx.closePath();
+
+  const grad = ctx.createRadialGradient(x, y, 5, x, y, 40);
+  grad.addColorStop(0, '#ff8080');
+  grad.addColorStop(1, '#ff0000');
+  ctx.fillStyle = grad;
+  ctx.shadowColor = '#ff3333';
+  ctx.shadowBlur = glowIntensity;
+  ctx.fill();
+  ctx.shadowBlur = 0;
+}
+
+// ====== CORAÇÕES FLUTUANTES ======
+function createFloatingHeart() {
+  const x = Math.random() * canvas.width;
+  const y = canvas.height + 20;
+  const size = Math.random() * 0.3 + 0.2;
+  const speed = Math.random() * 1 + 0.5;
+  floatingHearts.push({ x, y, size, speed });
+}
+
+function drawFloatingHeart(x, y, size) {
+  ctx.beginPath();
+  ctx.fillStyle = 'rgba(255, 0, 0, 0.7)';
+  for (let a = 0; a < 2 * Math.PI; a += 0.1) {
+    const X = 16 * Math.pow(Math.sin(a), 3);
+    const Y = 13 * Math.cos(a) - 5 * Math.cos(2*a)
+             - 2 * Math.cos(3*a) - Math.cos(4*a);
+    ctx.lineTo(x + X * size, y - Y * size);
+  }
+  ctx.fill();
+}
+
+function updateFloatingHearts() {
+  for (let i = floatingHearts.length - 1; i >= 0; i--) {
+    const h = floatingHearts[i];
+    h.y -= h.speed;
+    drawFloatingHeart(h.x, h.y, h.size);
+    if (h.y < -50) floatingHearts.splice(i, 1);
+  }
+}
+
+// ====== ANIMAÇÃO ======
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const { baseX, baseY, scale } = drawCharacter();
+
+  pulseTime += 0.05;
+  const pulse = Math.sin(pulseTime) * 0.05 + 1;
+  const glow = 20 + Math.sin(pulseTime * 2) * 8;
+
+  // ❤️ Coração no peito do boneco
+  const heartX = baseX;
+  const heartY = baseY - 30 * scale;
+  const heartScale = scale * 2;
+
+  drawHeart(heartX, heartY, heartScale * pulse, heartProgress, glow);
+  updateFloatingHearts();
+
+  if (heartProgress < 200) {
+    heartProgress += 3;
+  } else if (!showText) {
+    showText = true;
+    texto.style.opacity = 1;
+    setTimeout(() => {
+      pedido.style.opacity = 1;
+      setTimeout(() => botoes.style.opacity = 1, 2500);
+    }, 4000);
+  }
+
+  requestAnimationFrame(draw);
+}
+
+// ====== BOTÕES ======
+simBtn.addEventListener('click', () => {
+  pedido.innerHTML = "Sabia que você diria sim! 💞 Te amo, Joice Luize ❤️";
+  botoes.style.display = 'none';
+  const heartInterval = setInterval(() => createFloatingHeart(), 200);
+  setTimeout(() => clearInterval(heartInterval), 8000);
+});
+
+naoBtn.addEventListener('click', () => {
+  naoBtn.innerText = "Sim ❤️";
+  naoBtn.style.backgroundColor = "#ff3366";
+  naoBtn.style.color = "white";
+  naoBtn.style.boxShadow = "0 0 20px #ff3366";
+
+  naoBtn.addEventListener('click', () => {
+    pedido.innerHTML = "Sabia que você não resistiria 💓 Te amo, Joice Luize!";
+    botoes.style.display = 'none';
+    const heartInterval = setInterval(() => createFloatingHeart(), 200);
+    setTimeout(() => clearInterval(heartInterval), 8000);
+  }, { once: true });
+});
+
+draw();
+document.addEventListener('click', () => music.play(), { once: true });
+</script>
+</body>
+</html>
